@@ -28,8 +28,11 @@ const render = Render.create({
         width,
         height,
         wireframes: false,
-        showVelocity: true,
+        // showVelocity: true,
         showCollisions: true,
+        // showAngleIndicator: true,
+        // showAxes: true,
+        background: "black",
     }
 });
 
@@ -37,21 +40,21 @@ Render.run(render);
 const runner = Runner.create();
 Runner.run(runner, engine);
 
-// Custom rendering loop to draw numbers
-Events.on(render, "afterRender", () => {
-    const context = render.context;
+// // Custom rendering loop to draw numbers
+// Events.on(render, "afterRender", () => {
+//     const context = render.context;
 
-    // Draw numbers on each ball
-    bodies.forEach(body => {
-        context.fillStyle = "white"; // Text color
-        context.font = "16px Arial"; // Font style
-        context.textAlign = "center";
-        context.textBaseline = "middle";
+//     // Draw numbers on each ball
+//     bodies.forEach(body => {
+//         context.fillStyle = "white"; // Text color
+//         context.font = "16px Arial"; // Font style
+//         context.textAlign = "center";
+//         context.textBaseline = "middle";
 
-        // Draw number at the ball's position
-        context.fillText(body.label, body.position.x, body.position.y);
-    });
-});
+//         // Draw number at the ball's position
+//         context.fillText(body.label, body.position.x, body.position.y);
+//     });
+// });
 
 // Wrap-around logic
 Events.on(engine, "beforeUpdate", function () {
@@ -74,18 +77,19 @@ Events.on(engine, "beforeUpdate", function () {
     });
 });
 
-const bodyDensity = 0.000042;
+const bodyDensity = 0.000040;
 const totalArea = width * height;
 
 // Generate numBodies circular bodies
 const numBodies = Math.floor(totalArea * bodyDensity);
 const bodies = [];
 for (let i = 0; i < numBodies; i++) {
-    const circle = Bodies.circle(
+    const circle = Bodies.polygon(
         Math.random() * (width - 100) + 50,
         Math.random() * (height - 100) + 50,
-        20,
-        { label: ``, restitution: 1, friction: 0, frictionAir: 0.001, render: { fillStyle: "rgb(80, 80, 80)" } }
+        3,
+        22,
+        { angle: Math.random() * 2 * Math.PI, label: `${i}`, restitution: 0.999, friction: 0, frictionAir: 0.001, render: { fillStyle: "rgb(80, 80, 80)", strokeStyle: "white", lineWidth: 1 } },
     );
     bodies.push(circle);
 }
@@ -104,11 +108,11 @@ let isToneStarted = false;
 
 // Function to start Tone.js once
 const ensureTone = async () => {
-  if (!isToneStarted) {
-    await Tone.start(); // Start Audio Context
-    isToneStarted = true;
-    console.log("Audio context started!");
-  }
+    if (!isToneStarted) {
+        await Tone.start(); // Start Audio Context
+        isToneStarted = true;
+        console.log("Audio context started!");
+    }
 };
 
 function createClickIndicator(x, y) {
@@ -124,9 +128,9 @@ function createClickIndicator(x, y) {
 
     let scale = 5;
     let opacity = 0.7;
-    
+
     const expandInterval = setInterval(() => {
-        scale += 3;
+        scale += 4;
         opacity -= 0.1;
 
         indicator.circleRadius = 5 * scale;
@@ -136,7 +140,7 @@ function createClickIndicator(x, y) {
             clearInterval(expandInterval);
             World.remove(world, indicator);
         }
-    }, 40);
+    }, 30);
 }
 
 // Explosion effect on mouse click with force cap
@@ -145,7 +149,10 @@ const explosionStrength = 4; // Adjust this for stronger/weaker explosions
 
 Events.on(mouseConstraint, "mousedown", function (event) {
     ensureTone();
-    
+
+    const transpose = _.random(0, 11);
+    frequencies = constructFrequencies(transpose);
+
     const mousePosition = mouseConstraint.mouse.position;
 
     createClickIndicator(mousePosition.x, mousePosition.y);
@@ -165,36 +172,55 @@ const limiter = new Tone.Limiter(-1).toDestination();
 const highShelf = new Tone.Filter({
     type: "highshelf",
     frequency: 2400,
-    gain: -36
+    gain: -24
 }).connect(limiter);
-const chorus = new Tone.Chorus(4, 2.5, 0.3).connect(highShelf);
+const chorus = new Tone.Chorus(5, 2.5, 0.3).connect(highShelf);
 const pingPongDelay = new Tone.PingPongDelay({
-    delayTime: "0.3s",
-    feedback: 0.15,
-    wet: 0.15
+    delayTime: "0.25s",
+    feedback: 0.27,
+    wet: 0.11
 }).connect(chorus);
 const masterGain = new Tone.Volume(-12).connect(pingPongDelay);
 
-const notes = ["E", "F#", "G#", "B", "D#"]
-const octaves = [3, 4, 5, 6, 7, 8]
+// const notes = ["E", "F#", "G#", "B", "D#"]
+// const octaves = [3, 4, 5, 6, 7, 8]
+
+const freqObj = Tone.Frequency("C2")
+const scaleIdxs = [0, 2, 4, 7, 10]
+const octIdxs = [0, 1, 2, 3, 4]
+const scale = _.flatten(
+    _.map(octIdxs, (o) =>
+        _.map(scaleIdxs, (s) =>
+            o * 12 + s
+        )
+    )
+)
+
+const constructFrequencies = (transpose = 0) => {
+    const frequencies = freqObj.transpose(transpose).harmonize(scale);
+    
+    return frequencies;
+}
+
+let frequencies = constructFrequencies();
 
 const polySynth = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "sine" },
+    oscillator: { type: "triangle" },
     envelope: {
         attack: 0.01,
-        decay: 0.7,
+        decay: 0.4,
         sustain: 0,
-        release: 1.5
+        release: 1,
     },
-    maxPolyphony: 12
+    maxPolyphony: 16
 }).connect(masterGain);
 
 const triggerBell = () => {
-    const spn = `${_.sample(notes)}${_.sample(octaves)}`;
+    const frequency = _.sample(frequencies)
 
     if (isToneStarted) {
-
-        polySynth.triggerAttackRelease(spn, "0.2s");
+        const now = Tone.now();
+        polySynth.triggerAttackRelease(frequency, "0.1s", now + 0.05);
     }
 }
 
@@ -215,7 +241,7 @@ Events.on(engine, "collisionStart", (event) => {
             makeBallGlow(bodyB);
 
             createBloom((bodyA.position.x + bodyB.position.x) / 2,
-            (bodyA.position.y + bodyB.position.y) / 2);
+                (bodyA.position.y + bodyB.position.y) / 2);
         }
     });
 });
@@ -246,7 +272,7 @@ function createBloom(x, y) {
             clearInterval(bloomInterval);
             World.remove(world, bloom);
         }
-    }, 60);
+    }, 70);
 }
 
 // Function to make a ball glow
