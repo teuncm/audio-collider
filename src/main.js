@@ -144,8 +144,8 @@ function createClickIndicator(x, y) {
 }
 
 // Explosion effect on mouse click with force cap
-const maxForce = 0.05; // Maximum force cap
-const explosionStrength = 4; // Adjust this for stronger/weaker explosions
+const maxForce = 0.04; // Maximum force cap
+const explosionStrength = 3; // Adjust this for stronger/weaker explosions
 
 Events.on(mouseConstraint, "mousedown", function (event) {
     ensureTone();
@@ -208,11 +208,11 @@ const polySynth = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: "triangle" },
     envelope: {
         attack: 0.01,
-        decay: 0.4,
+        decay: 0.5,
         sustain: 0,
         release: 1,
     },
-    maxPolyphony: 16
+    maxPolyphony: 12
 }).connect(masterGain);
 
 const triggerBell = () => {
@@ -220,7 +220,7 @@ const triggerBell = () => {
 
     if (isToneStarted) {
         const now = Tone.now();
-        polySynth.triggerAttackRelease(frequency, "0.1s", now + 0.05);
+        polySynth.triggerAttackRelease(frequency, "0.15s", now + 0.05);
     }
 }
 
