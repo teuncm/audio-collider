@@ -28,7 +28,7 @@ for (let i = 0; i < numBodies; i++) {
     Math.random() * 10 + 20,
     {
       angle: Math.random() * 2 * Math.PI, label: `${i}`, restitution: 0.99, friction: 0, frictionAir: 0.001, render: {
-        fillStyle: defaultBodyColor, strokeStyle: "white", lineWidth: 0
+        fillStyle: defaultBodyColor, strokeStyle: "white", lineWidth: 1
       }
     },
   );
@@ -142,7 +142,7 @@ function triggerGlow(matterObj, originalColor, glowColor, glowDuration = 200) {
   // Revert back to original after a short delay
   setTimeout(() => {
     matterObj.render.fillStyle = originalColor;
-    matterObj.render.lineWidth = 0;
+    matterObj.render.lineWidth = 1;
   }, glowDuration);
 }
 
