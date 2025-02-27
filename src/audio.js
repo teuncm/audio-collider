@@ -8,6 +8,7 @@ export let isToneStarted = false;
 export async function ensureTone() {
   if (!isToneStarted) {
     await Tone.start();
+
     isToneStarted = true;
     console.log("Initialized Tone.js and AudioContext!");
   }
@@ -57,7 +58,7 @@ export function constructFrequencies(transpose = 0) {
 };
 
 const polySynth = new Tone.PolySynth(Tone.Synth, {
-  oscillator: { type: "fmtriangle" },
+  oscillator: { type: "fmsquare" },
   envelope: {
     attack: 0.01,
     decay: 0.5,
@@ -78,13 +79,32 @@ const lowSynth = new Tone.PolySynth(Tone.Synth, {
   maxPolyphony: 3
 }).connect(effectChain);
 
+let activeVoices = 0;
+
 // Trigger a bell sound
 export function triggerBell() {
   const frequency = _.sample(frequencies);
 
   if (isToneStarted) {
+    if (activeVoices >= 10) {
+      polySynth.releaseAll();
+      activeVoices = 0;
+
+      return
+    }
+
     const now = Tone.now();
     polySynth.triggerAttackRelease(frequency, "0.51s", now + Math.random() * 0.1);
+
+    activeVoices += 1;
+
+    setTimeout(() => {
+      if (activeVoices <= 0) {
+        return
+      }
+
+      activeVoices -= 1;
+    }, 510);
   }
 };
 
