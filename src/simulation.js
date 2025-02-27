@@ -54,9 +54,9 @@ Events.on(mouseConstraint, "mousedown", async function (event) {
 
   const explosionColor = chroma(baseBackgroundColor).set('hsl.h', curHue).saturate(256).darken(1.2);
 
-  createExplosion(x, y, explosionColor, 5, 0.7, 1.5, -0.05, 30);
-  createExplosion(x, y, explosionColor, 5, 0.7, 2, -0.07, 30);
-  createExplosion(x, y, explosionColor, 5, 0.7, 3, -0.09, 30);
+  createExplosion(x, y, explosionColor, 5, 0.8, 1.2, -0.028, 30);
+  createExplosion(x, y, explosionColor, 5, 0.8, 1.8, -0.060, 30);
+  createExplosion(x, y, explosionColor, 5, 0.8, 2.5, -0.075, 30);
   applyOutwardForce(mousePosition);
 });
 
